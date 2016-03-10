@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 from hashlib import sha1, md5
-from urllib import urlencode
+from urllib.parse import urlencode
 import time
 from werobot.client import Client
 from werobot.utils import pay_sign_dict, generate_token
