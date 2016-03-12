@@ -229,6 +229,7 @@ class BaseRoBot(object):
         """
         import jsonpickle
         self.logger.debug('接收到消息：%s', jsonpickle.encode(message))
+
         session_storage = self.config["SESSION_STORAGE"]
 
         id = None
@@ -246,6 +247,12 @@ class BaseRoBot(object):
                     session_storage[id] = session
                 if reply:
                     rep = process_function_reply(reply, message=message)
+                    import common.log.logWx as logw
+                    _from = message.source
+                    _to = message.target
+                    _msg_type = message.type
+                    # _event = message.type
+
                     self.logger.debug('回复消息：%s', jsonpickle.encode(message))
                     return rep
         except:
