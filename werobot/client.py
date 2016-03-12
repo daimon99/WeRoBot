@@ -475,7 +475,7 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-                url="https://api.weixin.qq.com/cgi-bin/qrcode/create",
+                url="https://api.weixin.qq.com/cgi-bin/qrcode_service/create",
                 data=data
         )
 
