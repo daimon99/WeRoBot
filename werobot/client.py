@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import time
+
 import requests
-
-
 from requests.compat import json as _json
+
+import common.log.logWx
 from werobot.utils import to_text
 
 
@@ -27,6 +28,7 @@ class Client(object):
     微信 API 操作类
     通过这个类可以方便的通过微信 API 进行一系列操作，比如主动发送消息、创建自定义菜单等
     """
+
     def __init__(self, appid, appsecret):
         self.appid = appid
         self.appsecret = appsecret
@@ -36,33 +38,44 @@ class Client(object):
     def request(self, method, url, **kwargs):
         if "params" not in kwargs:
             kwargs["params"] = {"access_token": self.token}
+
+        _from = self.appid
+        _data = _json.dumps(kwargs)
+
         if isinstance(kwargs.get("data", ""), dict):
+            _msgtype = kwargs.get('data').get('msgtype')
+            _to_user = kwargs.get('data').get('touser')
             body = _json.dumps(kwargs["data"], ensure_ascii=False)
             body = body.encode('utf8')
             kwargs["data"] = body
+        else:
+            _msgtype = 'client_credential'  # 没body说明是在拿token
+            _to_user = ""
 
         r = requests.request(
-            method=method,
-            url=url,
-            **kwargs
+                method=method,
+                url=url,
+                **kwargs
         )
         r.raise_for_status()
         json = r.json()
+        _result = json
+        common.log.logWx.log_wxdn(_data, _result, _from, _to_user, _msgtype)
         if check_error(json):
             return json
 
     def get(self, url, **kwargs):
         return self.request(
-            method="get",
-            url=url,
-            **kwargs
+                method="get",
+                url=url,
+                **kwargs
         )
 
     def post(self, url, **kwargs):
         return self.request(
-            method="post",
-            url=url,
-            **kwargs
+                method="post",
+                url=url,
+                **kwargs
         )
 
     def grant_token(self):
@@ -73,12 +86,12 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.get(
-            url="https://api.weixin.qq.com/cgi-bin/token",
-            params={
-                "grant_type": "client_credential",
-                "appid": self.appid,
-                "secret": self.appsecret
-            }
+                url="https://api.weixin.qq.com/cgi-bin/token",
+                params={
+                    "grant_type": "client_credential",
+                    "appid": self.appid,
+                    "secret": self.appsecret
+                }
         )
 
     @property
@@ -137,8 +150,8 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/menu/create",
-            data=menu_data
+                url="https://api.weixin.qq.com/cgi-bin/menu/create",
+                data=menu_data
         )
 
     def get_menu(self):
@@ -170,14 +183,14 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="http://file.api.weixin.qq.com/cgi-bin/media/upload",
-            params={
-                "access_token": self.token,
-                "type": media_type
-            },
-            files={
-                "media": media_file
-            }
+                url="http://file.api.weixin.qq.com/cgi-bin/media/upload",
+                params={
+                    "access_token": self.token,
+                    "type": media_type
+                },
+                files={
+                    "media": media_file
+                }
         )
 
     def download_media(self, media_id):
@@ -190,11 +203,11 @@ class Client(object):
         :return: requests 的 Response 实例
         """
         return requests.get(
-            "http://file.api.weixin.qq.com/cgi-bin/media/get",
-            params={
-                "access_token": self.token,
-                "media_id": media_id
-            }
+                "http://file.api.weixin.qq.com/cgi-bin/media/get",
+                params={
+                    "access_token": self.token,
+                    "media_id": media_id
+                }
         )
 
     def create_group(self, name):
@@ -208,8 +221,8 @@ class Client(object):
         """
         name = to_text(name)
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/groups/create",
-            data={"group": {"name": name}}
+                url="https://api.weixin.qq.com/cgi-bin/groups/create",
+                data={"group": {"name": name}}
         )
 
     def get_groups(self):
@@ -230,8 +243,8 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/groups/getid",
-            data={"openid": openid}
+                url="https://api.weixin.qq.com/cgi-bin/groups/getid",
+                data={"openid": openid}
         )
 
     def update_group(self, group_id, name):
@@ -244,11 +257,11 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/groups/update",
-            data={"group": {
-                "id": int(group_id),
-                "name": to_text(name)
-            }}
+                url="https://api.weixin.qq.com/cgi-bin/groups/update",
+                data={"group": {
+                    "id": int(group_id),
+                    "name": to_text(name)
+                }}
         )
 
     def move_user(self, user_id, group_id):
@@ -261,11 +274,11 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/groups/members/update",
-            data={
-                "openid": user_id,
-                "to_groupid": group_id
-            }
+                url="https://api.weixin.qq.com/cgi-bin/groups/members/update",
+                data={
+                    "openid": user_id,
+                    "to_groupid": group_id
+                }
         )
 
     def get_user_info(self, user_id, lang="zh_CN"):
@@ -278,12 +291,12 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.get(
-            url="https://api.weixin.qq.com/cgi-bin/user/info",
-            params={
-                "access_token": self.token,
-                "openid": user_id,
-                "lang": lang
-            }
+                url="https://api.weixin.qq.com/cgi-bin/user/info",
+                params={
+                    "access_token": self.token,
+                    "openid": user_id,
+                    "lang": lang
+                }
         )
 
     def get_followers(self, first_user_id=None):
@@ -311,12 +324,12 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
-            data={
-                "touser": user_id,
-                "msgtype": "text",
-                "text": {"content": content}
-            }
+                url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
+                data={
+                    "touser": user_id,
+                    "msgtype": "text",
+                    "text": {"content": content}
+                }
         )
 
     def send_image_message(self, user_id, media_id):
@@ -329,14 +342,14 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
-            data={
-                "touser": user_id,
-                "msgtype": "image",
-                "image": {
-                    "media_id": media_id
+                url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
+                data={
+                    "touser": user_id,
+                    "msgtype": "image",
+                    "image": {
+                        "media_id": media_id
+                    }
                 }
-            }
         )
 
     def send_voice_message(self, user_id, media_id):
@@ -349,14 +362,14 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
-            data={
-                "touser": user_id,
-                "msgtype": "voice",
-                "voice": {
-                    "media_id": media_id
+                url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
+                data={
+                    "touser": user_id,
+                    "msgtype": "voice",
+                    "voice": {
+                        "media_id": media_id
+                    }
                 }
-            }
         )
 
     def send_video_message(self, user_id, media_id,
@@ -380,12 +393,12 @@ class Client(object):
             video_data["description"] = description
 
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
-            data={
-                "touser": user_id,
-                "msgtype": "video",
-                "video": video_data
-            }
+                url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
+                data={
+                    "touser": user_id,
+                    "msgtype": "video",
+                    "video": video_data
+                }
         )
 
     def send_music_message(self, user_id, url, hq_url, thumb_media_id,
@@ -413,12 +426,12 @@ class Client(object):
             music_data["description"] = description
 
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
-            data={
-                "touser": user_id,
-                "msgtype": "music",
-                "music": music_data
-            }
+                url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
+                data={
+                    "touser": user_id,
+                    "msgtype": "music",
+                    "music": music_data
+                }
         )
 
     def send_article_message(self, user_id, articles):
@@ -439,14 +452,14 @@ class Client(object):
                 "picurl": article.img
             })
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
-            data={
-                "touser": user_id,
-                "msgtype": "news",
-                "news": {
-                    "articles": articles_data
+                url="https://api.weixin.qq.com/cgi-bin/message/custom/send",
+                data={
+                    "touser": user_id,
+                    "msgtype": "news",
+                    "news": {
+                        "articles": articles_data
+                    }
                 }
-            }
         )
 
     def create_qrcode(self, **data):
@@ -458,8 +471,8 @@ class Client(object):
         :return: 返回的 JSON 数据包
         """
         return self.post(
-            url="https://api.weixin.qq.com/cgi-bin/qrcode/create",
-            data=data
+                url="https://api.weixin.qq.com/cgi-bin/qrcode/create",
+                data=data
         )
 
     def show_qrcode(self, ticket):
@@ -471,8 +484,8 @@ class Client(object):
         :return: 返回的 Request 对象
         """
         return requests.get(
-            url="https://mp.weixin.qq.com/cgi-bin/showqrcode",
-            params={
-                "ticket": ticket
-            }
+                url="https://mp.weixin.qq.com/cgi-bin/showqrcode",
+                params={
+                    "ticket": ticket
+                }
         )
