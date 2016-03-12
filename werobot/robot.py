@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import six
-import os
 import inspect
 import logging
+import os
+
+import six
 
 import werobot
-
 from werobot.config import Config, ConfigAttribute
 from werobot.exceptions import ConfigError
 from werobot.parser import parse_xml, process_message
@@ -16,16 +16,15 @@ from werobot.utils import to_binary, to_text, check_signature
 
 __all__ = ['BaseRoBot', 'WeRoBot']
 
-
 _DEFAULT_CONFIG = dict(
-    SERVER="auto",
-    HOST="127.0.0.1",
-    PORT="8888"
+        SERVER="auto",
+        HOST="127.0.0.1",
+        PORT="8888"
 )
 
 
 class BaseRoBot(object):
-    message_types = ['subscribe', 'unsubscribe', 'click',  'view',  # event
+    message_types = ['subscribe', 'unsubscribe', 'click', 'view',  # event
                      'text', 'image', 'link', 'location', 'voice']
 
     token = ConfigAttribute("TOKEN")
@@ -46,14 +45,14 @@ class BaseRoBot(object):
         if enable_session and session_storage is None:
             from .session.filestorage import FileStorage
             session_storage = FileStorage(
-                filename=os.path.abspath("werobot_session")
+                    filename=os.path.abspath("werobot_session")
             )
         self.config.update(
-            TOKEN=token,
-            SESSION_STORAGE=session_storage,
-            APP_ID=app_id,
-            APP_SECRET=app_secret,
-            ENCODING_AES_KEY=encoding_aes_key
+                TOKEN=token,
+                SESSION_STORAGE=session_storage,
+                APP_ID=app_id,
+                APP_SECRET=app_secret,
+                ENCODING_AES_KEY=encoding_aes_key
         )
 
         self.use_encryption = False
@@ -75,13 +74,12 @@ class BaseRoBot(object):
 
         from .crypto import MessageCrypt
         self._crypto = MessageCrypt(
-            token=self.config["TOKEN"],
-            encoding_aes_key=encoding_aes_key,
-            app_id=app_id
+                token=self.config["TOKEN"],
+                encoding_aes_key=encoding_aes_key,
+                app_id=app_id
         )
         self.use_encryption = True
         return self._crypto
-
 
     def handler(self, f):
         """
@@ -151,6 +149,7 @@ class BaseRoBot(object):
         Shortcut for ``click`` messages
         @key_click('KEYNAME') for special key on click event
         """
+
         def wraps(f):
             argc = len(inspect.getargspec(f).args)
 
@@ -158,6 +157,7 @@ class BaseRoBot(object):
             def onclick(message, session=None):
                 if message.key == key:
                     return f(*[message, session][:argc])
+
             return f
 
         return wraps
@@ -227,8 +227,8 @@ class BaseRoBot(object):
         """
         Return the Reply Object for the given message.
         """
-        import json
-        self.logger.debug('接收到消息：%s', json.dumps(message))
+        import jsonpickle
+        self.logger.debug('接收到消息：%s', jsonpickle.encode(message))
         session_storage = self.config["SESSION_STORAGE"]
 
         id = None
@@ -246,7 +246,7 @@ class BaseRoBot(object):
                     session_storage[id] = session
                 if reply:
                     rep = process_function_reply(reply, message=message)
-                    self.logger.debug('回复消息：%s', json.dumps(message))
+                    self.logger.debug('回复消息：%s', jsonpickle.encode(message))
                     return rep
         except:
             self.logger.warning("Catch an exception", exc_info=True)
@@ -256,7 +256,6 @@ class BaseRoBot(object):
 
 
 class WeRoBot(BaseRoBot):
-
     ERROR_PAGE_TEMPLATE = """
     <!DOCTYPE html>
     <html>
@@ -291,9 +290,9 @@ class WeRoBot(BaseRoBot):
         @app.get('<t:path>')
         def echo(t):
             if not self.check_signature(
-                request.query.timestamp,
-                request.query.nonce,
-                request.query.signature
+                    request.query.timestamp,
+                    request.query.nonce,
+                    request.query.signature
             ):
                 return abort(403)
             return request.query.echostr
@@ -301,9 +300,9 @@ class WeRoBot(BaseRoBot):
         @app.post('<t:path>')
         def handle(t):
             if not self.check_signature(
-                request.query.timestamp,
-                request.query.nonce,
-                request.query.signature
+                    request.query.timestamp,
+                    request.query.nonce,
+                    request.query.signature
             ):
                 return abort(403)
 
@@ -311,10 +310,10 @@ class WeRoBot(BaseRoBot):
             message_dict = parse_xml(body)
             if "Encrypt" in message_dict:
                 xml = self.crypto.decrypt_message(
-                    timestamp=request.query.timestamp,
-                    nonce=request.query.nonce,
-                    msg_signature=request.query.msg_signature,
-                    encrypt_msg=message_dict["Encrypt"]
+                        timestamp=request.query.timestamp,
+                        nonce=request.query.nonce,
+                        msg_signature=request.query.msg_signature,
+                        encrypt_msg=message_dict["Encrypt"]
                 )
                 message_dict = parse_xml(xml)
             message = process_message(message_dict)
