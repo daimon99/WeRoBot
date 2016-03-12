@@ -60,6 +60,10 @@ class Client(object):
         r.raise_for_status()
         json = r.json()
         _result = json
+        import jsonpickle
+        import logging
+        log = logging.getLogger(__name__)
+        log.debug(jsonpickle.encode(kwargs))
         common.log.logWx.log_wxdn(_data, _result, _from, _to_user, _msgtype)
         if check_error(json):
             return json
