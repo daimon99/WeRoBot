@@ -227,7 +227,8 @@ class BaseRoBot(object):
         """
         Return the Reply Object for the given message.
         """
-        self.logger.debug('接收到消息：%s', message)
+        import json
+        self.logger.debug('接收到消息：%s', json.dumps(message))
         session_storage = self.config["SESSION_STORAGE"]
 
         id = None
@@ -245,7 +246,7 @@ class BaseRoBot(object):
                     session_storage[id] = session
                 if reply:
                     rep = process_function_reply(reply, message=message)
-                    self.logger.debug('回复消息：%s', rep)
+                    self.logger.debug('回复消息：%s', json.dumps(message))
                     return rep
         except:
             self.logger.warning("Catch an exception", exc_info=True)
