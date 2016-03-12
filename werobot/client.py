@@ -64,7 +64,7 @@ class Client(object):
         import logging
         log = logging.getLogger(__name__)
         log.debug(jsonpickle.encode(kwargs))
-        common.log.logWx.log_wxdn(_data, _result, _from, _to_user, _msgtype)
+        common.log.logWx.log_wx_msg(_data, _result, _from, _to_user, _msgtype)
         if check_error(json):
             return json
 
